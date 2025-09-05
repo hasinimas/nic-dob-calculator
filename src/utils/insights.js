@@ -66,13 +66,14 @@ export async function getOnThisDayEvent(month, day) {
   }
 }
 
-// --- Movies from TMDb (needs API key) ---
+// --- Movies from TMDb ---
 export async function getMoviesByYear(year) {
-  const key = window.env?.TMDB_KEY; // set in your HTML: window.env = { TMDB_KEY: "xxxx" }
+  const key = process.env.REACT_APP_TMDB_KEY;
   if (!key) {
     console.warn("TMDB API key not found. Movies will not display.");
     return [];
   }
+
   const url = `https://api.themoviedb.org/3/discover/movie?primary_release_year=${year}&sort_by=popularity.desc&api_key=${key}`;
   
   try {
@@ -171,3 +172,5 @@ document.addEventListener("click", (e) => {
     // replace with your real feature logic
   }
 });
+
+
