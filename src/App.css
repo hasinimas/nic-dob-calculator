@@ -1,0 +1,247 @@
+:root{
+  --card-bg: rgba(255,255,255,0.85);
+  --text: #1a1a1a;
+  --muted: #5b5b5b;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+*{box-sizing:border-box}
+.app-shell{min-height:100vh;display:flex;flex-direction:column;gap:24px;padding:24px}
+.app-header{text-align:center;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.25)}
+.app-header h1{font-size:clamp(28px,4vw,40px);margin:8px 0}
+.subtitle{opacity:.9;margin:0}
+.app-main{max-width:900px;margin:0 auto;width:100%}
+.card{background:var(--card-bg);border-radius:var(--radius);backdrop-filter:blur(8px);padding:24px;box-shadow:var(--shadow)}
+.input-row{display:flex;gap:12px}
+.input-row input{flex:1;padding:14px 16px;border-radius:12px;border:1px solid rgba(0,0,0,0.08);outline:none}
+.input-row input:focus{border-color:#5b9dff;box-shadow:0 0 0 3px rgba(91,157,255,.25)}
+.input-row button{padding:14px 18px;border:0;border-radius:12px;background:#111;color:#fff;font-weight:600;cursor:pointer;transition:transform .05s ease}
+.input-row button:active{transform:translateY(1px)}
+.result{margin-top:12px;font-size:16px;color:var(--text)}
+.badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;background:#111;color:#fff;font-size:12px}
+.happy{margin-top:8px;font-weight:700}
+.error{color:#b00020;font-weight:600}
+.grid{display:grid;gap:6px}
+.insights-wrap{margin-top:18px}
+.app-footer{color:#fff;opacity:.9;text-align:center;margin-top:auto}
+/* keep original styles below for gradients, confetti, character, etc. */
+
+
+/* Default gradient before any NIC entered */
+body.default {
+  background: linear-gradient(-45deg, #4facfe, #43e97b,  #f3a8f7,#e8b5da, #ffdde1);
+  background-size: 400% 400%;
+  animation: gradientBG 10s ease infinite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Male & Female gradients */
+body.male {
+  background: linear-gradient(-45deg, #4facfe, #00f2fe, #6be3ee, #38f9d7);
+}
+
+body.female {
+  background: linear-gradient(-45deg, #ff9a9e, #fbc2eb, #fad0c4, #ffdde1);
+}
+
+@keyframes gradientBG {
+  0% {background-position:0% 50%;}
+  50% {background-position:100% 50%;}
+  100% {background-position:0% 50%;}
+}
+
+/* Floating character - full screen wavy motion */
+#floatingCharacter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 300px;   /* size of character */
+  height: 300px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  animation: floatWavy 12s ease-in-out infinite;
+  z-index: 0;
+}
+
+/* Wavy motion across screen diagonally */
+@keyframes floatWavy {
+  0% {
+    left: 0%;
+    bottom: 10%;
+    transform: rotate(-5deg);
+  }
+  25% {
+    left: 25%;
+    bottom: 30%;
+    transform: rotate(5deg);
+  }
+  50% {
+    left: 50%;
+    bottom: 15%;
+    transform: rotate(-5deg);
+  }
+  75% {
+    left: 75%;
+    bottom: 35%;
+    transform: rotate(5deg);
+  }
+  100% {
+    left: 100%;
+    bottom: 20%;
+    transform: rotate(-5deg);
+  }
+}
+
+/* Container */
+.container {
+  text-align: center;
+  color: #a58f8f;
+}
+
+/* Glass card */
+.input-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  padding: 40px 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 400px;
+  margin: 20px auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Input field */
+.input-card input {
+  width: 100%;             /* full width of card */
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: #fffdfd;
+  border: none;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s;
+  display: block;          /* ensures it takes full width */
+  box-sizing: border-box;  /* includes padding in width */
+}
+
+input:focus {
+  box-shadow: 0 0 10px #d2bdbd;
+}
+
+/* Button */
+button {
+  padding: 15px 25px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #4facfe;
+  color: #e9edef;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #316abf;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+/* Result */
+.result {
+  margin-top: 25px;
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+/* Birthday badge */
+.badge {
+  display: inline-block;
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  margin-left: 10px;
+  font-weight: 600;
+}
+
+/* Confetti canvas */
+#confettiCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* allow clicks through canvas */
+  z-index: 0;
+}
+
+/* === Insights Section === */
+#insights-container {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+#insights-container h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #333;
+}
+.cards { 
+  display: grid; 
+  gap: 1rem; 
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+}
+#insights-container .card { 
+  background: rgb(184, 239, 244); 
+  border-radius: 12px; 
+  padding: 1rem; 
+  box-shadow: 0 4px 12px rgba(0,0,0,.1); 
+}
+.card h3 { 
+  margin-bottom: .5rem; 
+  font-size: 1.1rem; 
+}
+.posters { 
+  display: flex; 
+  gap: .5rem; 
+  flex-wrap: wrap; 
+}
+.posters img { 
+  width: 80px; 
+  border-radius: 8px; 
+}
+
+.travel-btn {
+  padding: 10px 16px;
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+  color: white;
+  float: right;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+  margin-top: -55px;
+  margin-right: 15px;
+  animation: blink 2s infinite;
+}
+
+.travel-btn:hover{
+  background: linear-gradient(45deg, #43e97b, #38f9d7);
+  transform: scale(1.05);
+}
+
+/* Blinking animation for btnTravel button */
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.3; }
+}
+
