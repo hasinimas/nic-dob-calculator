@@ -1,0 +1,33 @@
+.travel-page {
+  padding: 2rem;
+  text-align: center;
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.final-card {
+  background: #ffeaa7;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
