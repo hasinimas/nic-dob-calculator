@@ -1,4 +1,7 @@
 // Extra fun facts & APIs for NIC DOB Calculator
+import React from "react";
+import TravelButton from "../components/TravelButton";
+
 
 // --- Date utils ---
 const fmt = {
@@ -134,7 +137,7 @@ export function renderInsights(container, data) {
   container.innerHTML = `
     <div>
       <h2>Fun Facts & Insights 🎉</h2>
-      <button id="btnTravel" class="travel-btn">View Travel Card </button>
+      <a href="/travel" class="travel-btn">View Travel Card</a>
     </div>
     <div class="cards">
       <div class="card">
@@ -167,11 +170,12 @@ export function renderInsights(container, data) {
 }
 
 
-document.addEventListener("click", (e) => {
-  if (e.target.id === "btnTravel") {
-    alert("🚀 New feature coming soon!");
-    // replace with your real feature logic
-  }
-});
 
-
+export default function Insights() {
+  return (
+    <section className="insights-wrap">
+      <div id="insights" />
+      <TravelButton />
+    </section>
+  );
+}
