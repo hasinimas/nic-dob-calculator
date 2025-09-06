@@ -166,6 +166,7 @@ export function renderInsights(container, data) {
   `;
 }
 
+
 document.addEventListener("click", (e) => {
   if (e.target.id === "btnTravel") {
     alert("🚀 New feature coming soon!");
