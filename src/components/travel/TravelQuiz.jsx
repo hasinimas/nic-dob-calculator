@@ -1,65 +1,81 @@
-// src/components/travel/TravelQuiz.jsx
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import TravelResult from "./TravelResult";
-import "../TravelScenario.css";
+import "./TravelQuiz.css";
 
-export default function TravelQuiz({ nicState = {} }) {
+const questions = [
+  {
+    id: "style",
+    question: "What's your travel style?",
+    options: ["🌴 Relaxation", "🗺 Adventure", "🏛 Culture", "🎉 Party", "🌲 Nature", "🏖 Luxury"],
+  },
+  {
+    id: "companion",
+    question: "Who’s your ideal companion?",
+    options: ["👯 Friends", "💑 Partner", "👨‍👩‍👧 Family", "🧳 Solo"],
+  },
+  {
+    id: "setting",
+    question: "Pick a setting:",
+    options: ["🏖 Beach", "⛰ Mountains", "🏙 City", "🌌 Countryside"],
+  },
+  {
+    id: "pace",
+    question: "Your pace?",
+    options: ["🐢 Slow & Relaxed", "🚀 Fast & Thrilling", "⚖ Balanced"],
+  },
+];
+
+export default function TravelQuiz() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showResult, setShowResult] = useState(false);
 
-  const questions = [
-    { id: "style", text: "What’s your travel style?", options: ["🌴 Relaxation", "🗺 Adventure", "🏛 Culture", "🎉 Party"] },
-    { id: "companion", text: "Who do you travel with?", options: ["👤 Solo", "❤️ Partner", "👨‍👩‍👧 Family", "👯 Friends"] },
-    { id: "setting", text: "Pick your dream setting:", options: ["🏖 Beach", "🏔 Mountains", "🌆 City", "🌲 Forest"] },
-    { id: "pace", text: "Your pace of travel?", options: ["🐢 Slow & mindful", "🚴 Active", "🛍 Easygoing", "📸 Fast-track"] },
-  ];
-
-  const handleAnswer = (option) => {
+  const handleSelect = (option) => {
     const q = questions[step];
-    setAnswers(prev => ({ ...prev, [q.id]: option }));
+    setAnswers((prev) => ({ ...prev, [q.id]: option }));
     if (step < questions.length - 1) {
-      setStep(s => s + 1);
+      setStep(step + 1);
     } else {
       setShowResult(true);
     }
   };
 
-  const reset = () => {
-    setAnswers({});
+  const handleClose = () => {
     setStep(0);
+    setAnswers({});
     setShowResult(false);
   };
 
   return (
-    <div className="quiz-card">
-      {!showResult ? (
-        <>
-          <div className="quiz-header">
-            <h2>{questions[step].text}</h2>
-            <p className="hint">Quick — one card at a time. Tap an option to continue.</p>
-          </div>
-
-          <div className="questions">
-            <div className="question">
-              <div className="q-title">{questions[step].text}</div>
-              <div className="q-opts">
-                {questions[step].options.map((opt, idx) => (
-                  <button key={idx} className="opt" onClick={() => handleAnswer(opt)}>{opt}</button>
-                ))}
-              </div>
+    <div className="quiz-container">
+      {!showResult && (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.5 }}
+            className="quiz-card"
+          >
+            <h2>{questions[step].question}</h2>
+            <div className="options">
+              {questions[step].options.map((opt, i) => (
+                <button key={i} className="option-btn" onClick={() => handleSelect(opt)}>
+                  {opt}
+                </button>
+              ))}
             </div>
-          </div>
+            <p className="progress">
+              {step + 1} / {questions.length}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      )}
 
-          <div className="quiz-actions">
-            <div className="small-note">Question {step + 1} of {questions.length}</div>
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-              <button className="btn-ghost" onClick={reset}>Reset</button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <TravelResult answers={answers} nicState={nicState} onClose={() => setShowResult(false)} />
+      {showResult && (
+        <TravelResult answers={answers} onClose={handleClose} />
       )}
     </div>
   );
