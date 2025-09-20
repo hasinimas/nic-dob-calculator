@@ -1,77 +1,188 @@
-/* src/components/TravelResult.css */
-.result-overlay {
+/* TravelResult.css — polished, compact, professional layout */
+
+/* font: add this in index.html or at top of your global CSS:
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+*/
+:root{
+  --bg-overlay: rgba(6,12,28,0.55);
+  --card-bg-start: #ffffff;
+  --card-bg-end: #f7fbff;
+  --muted: #57606a;
+  --accent-a: #5dd3ff;
+  --accent-b: #7ef2b5;
+  --accent-c: #ffd47a;
+  --radius: 14px;
+  --shadow-strong: 0 20px 60px rgba(4,20,40,0.28);
+  --shadow-soft: 0 8px 30px rgba(6,22,50,0.08);
+}
+
+/* Overlay centers the card perfectly */
+.result-overlay.refined {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  display: flex;
+  align-items: center;   /* vertically center */
+  justify-content: center; /* horizontally center */
+  background: rgba(10, 14, 25, 0.65); /* dim backdrop */
+  padding: 24px;
   z-index: 9999;
-  padding: 20px;
+  overflow: auto; /* allow scroll if screen too small */
 }
 
-.result-card.enhanced {
-  width: min(1100px, 96%);
-  max-width: 1100px;
-  background: linear-gradient(135deg,#ffffff,#f3fbff);
-  border-radius: 18px;
-  padding: 18px;
-  box-shadow: 0 30px 90px rgba(6, 22, 50, 0.25);
-  position: relative;
-  font-family: "Poppins", system-ui, -apple-system, Arial;
-  color: #0f1720;
+/* Card is balanced in the screen */
+.result-card.refined {
+  background: linear-gradient(180deg, #ffffff, #f7fbff);
+  border-radius: 16px;
+  padding: 22px;
+  width: min(1000px, 95%);
+  max-height: 92vh;  /* never taller than screen */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+  overflow-y: auto;  /* scroll inside card if content overflows */
 }
 
-/* close */
-.result-card .close-btn {
-  position: absolute; right: 12px; top: 12px; border: none; background: transparent; font-size: 18px; cursor: pointer;
+
+/* Close button (styled round) */
+.close-btn{
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: rgba(255,255,255,0.85);
+  box-shadow: var(--shadow-soft);
+  font-weight: 700;
+  transition: transform .12s ease, background .12s ease;
+}
+.close-btn:hover{ transform: scale(1.04); background: #fff; }
+
+/* Header area (left persona + right estimate chip) */
+.card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(12,20,30,0.04);
 }
 
-/* top row */
-.result-top { display:flex; gap:18px; align-items:center; padding: 6px 8px; }
-.animal-emoji-giant { font-size: 84px; transform: translateY(-6px); text-shadow: 0 18px 40px rgba(0,0,0,0.12); }
-.persona-title h2 { margin:0; font-size:1.6rem; font-weight:800; }
-.persona-title .tagline { margin:6px 0 0; color:#445; font-size:0.95rem; }
+/* left header grouping */
+.left-head{ display:flex; gap:12px; align-items:center; }
 
-/* body layout */
-.result-body { display:flex; gap:18px; margin-top: 12px; }
-.result-body .left { width: 420px; }
-.result-body .right { flex:1; min-width: 280px; }
+/* animal badge */
+.animal-wrap{
+  width:84px; height:84px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(245,250,255,0.92));
+  box-shadow: 0 8px 24px rgba(6,22,50,0.06);
+}
+.animal-emoji{ font-size: 46px; transform: translateY(-2px); }
 
-/* summary card */
-.summary-card { background: linear-gradient(180deg,#ffffff,#f8fbff); padding: 12px; border-radius: 12px; box-shadow: 0 10px 30px rgba(6,22,50,0.06); }
-.summary-card h3 { margin:0 0 8px; }
-.summary-card input[type="number"], .summary-card select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 6px;
-  border-radius: 8px;
-  border:1px solid #e6eef8;
+/* persona text */
+.persona-name{ margin:0; font-size:1.3rem; font-weight:800; letter-spacing:-0.2px; }
+.small-meta{ color: var(--muted); margin-top:6px; font-size:0.93rem; }
+
+/* estimate chip */
+.estimate-chip{
+  min-width:190px;
+  text-align:right;
+  background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+  padding:10px 14px; border-radius: 12px; color:#032428;
+  box-shadow: 0 10px 30px rgba(2,36,60,0.06);
+}
+.estimate-label{ font-size:12px; color: rgba(2,10,20,0.48); }
+.estimate-amount{ font-weight:900; font-size:20px; margin-top:6px; }
+.per-person{ font-size:12px; color: rgba(2,10,20,0.5); margin-top:6px; }
+
+/* Main grid */
+.card-main{
+  display:grid;
+  grid-template-columns: 420px 1fr;
+  gap: 16px;
+  margin-top: 14px;
+  align-items:start;
 }
 
-/* CTA buttons */
-.cta-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-.btn-primary { padding:10px 12px; background: linear-gradient(90deg,#4facfe,#00f2fe); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700; box-shadow: 0 8px 20px rgba(12,60,120,0.08); }
-.btn-ghost { padding:8px 10px; border:1px solid #e5eef8; border-radius:10px; background:transparent; cursor:pointer; }
-.btn-download { padding:10px 12px; border-radius:10px; background:#fff; border:1px solid #eee; cursor:pointer; }
+/* Panels common */
+.panel{
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,255,255,0.98));
+  padding: 14px;
+  box-shadow: var(--shadow-soft);
+}
 
-/* places list */
-.places-list { background: linear-gradient(180deg,#ffffff,#fbfdff); padding:12px; border-radius:12px; box-shadow: 0 8px 20px rgba(8,20,40,0.04); }
-.place-line { display:flex; justify-content:space-between; align-items:center; padding:8px 6px; border-bottom:1px dashed #f0f3f7; }
-.place-line:last-child { border-bottom:none; }
-.place-name { font-weight:700; color:#123; }
-.open-google { color:#0b66d1; text-decoration:none; font-size:0.95rem; }
+/* Plan & Cost panel styles */
+.left-col .panel{ padding: 16px; }
+.inputs-row{ display:grid; grid-template-columns: repeat(2,1fr); gap:10px; align-items:end; }
+.inputs-row label{ display:block; font-size:13px; color:var(--muted); }
+.inputs-row input, .inputs-row select{
+  width:100%; padding:8px 10px; margin-top:6px; border-radius:8px; border:1px solid #eaf4fb; background:#fff;
+  font-size:14px;
+}
 
-/* LinkedIn caption area */
-.linkedin-caption { margin-top: 14px; }
-.linkedin-caption textarea { width:100%; border-radius:8px; padding:10px; border:1px solid #eef; background:#fff; }
+/* cost breakdown box */
+.cost-break{ margin-top:12px; border-radius:10px; padding:10px; background: linear-gradient(180deg,#fbfeff,#fff); }
+.cost-break .row{ display:flex; justify-content:space-between; gap: 12px; padding:8px 6px; align-items:center; color:#17313a; border-bottom: 1px dashed rgba(12,20,30,0.04); font-size:14px; }
+.cost-break .row:last-child{ border-bottom:none; }
+.cost-break .row.final{ margin-top:8px; padding-top:8px; font-size:1.05rem; font-weight:700; }
+.cost-break .big{ font-size:1.35rem; color:#0b2b36; }
+
+/* action buttons row */
+.actions-row{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+.btn{
+  padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; border:none; font-size:14px;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn.primary{ background: linear-gradient(90deg,#4facfe,#00f2fe); color:white; box-shadow: 0 8px 26px rgba(60,150,230,0.12); }
+.btn.ghost{ background: transparent; border: 1px solid rgba(12,20,40,0.06); color:#0b3b5b; }
+.btn.alt{ background: linear-gradient(90deg,#ffd47a,#ffb199); color:#062235; }
+.btn.download{ background: #ffffff; border:1px solid #e8f2f8; color:#0b3b5b; }
+
+/* suggestions panel */
+.suggestions ul{ padding-left:18px; margin:8px 0 0 0; color:#0b2b3b; }
+
+/* LinkedIn panel: prettier copy button */
+.panel.linkedin{ display:flex; flex-direction:column; gap:8px; }
+.panel.linkedin textarea{
+  width:100%; padding:10px; border-radius:8px; border:1px solid #e6eef8; background:#fff; resize:none; font-family: monospace;
+  font-size:13px; color:#0b2830;
+}
+.panel.linkedin .copy-row{ display:flex; justify-content:flex-end; gap:8px; }
+.btn.copy{ background:#0077b5; color:white; padding:8px 12px; border-radius:8px; }
+
+/* Right column: map + places list */
+.right-col .glass{ padding:12px; border-radius:12px; background: linear-gradient(180deg,#fff,#fbfdff); box-shadow:var(--shadow-soft); }
+.map-embed{ min-height:360px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
+.map-placeholder{ text-align:center; color:var(--muted); padding: 6px 8px; }
+.map-quick{ margin-top:8px; display:flex; gap:8px; justify-content:center; }
+
+.places-list{ margin-top:12px; padding:12px; border-radius:12px; background: linear-gradient(180deg,#fff,#fbfdff); box-shadow:var(--shadow-soft); }
+.place-row{ display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px dashed rgba(12,20,30,0.04); }
+.place-row:last-child{ border-bottom:none; }
+.place-name{ font-weight:700; color:#0b2b3b; }
+.place-meta{ font-size:12px; color:var(--muted); }
+
+/* small buttons */
+.btn.small{ padding:6px 10px; border-radius:8px; font-size:13px; }
+
+/* error banner */
+.error-banner{ margin-top:8px; padding:10px; border-radius:8px; background: rgba(255,235,235,0.9); color:#7a2b2b; }
+
+/* export watermark (temporary) */
+.export-watermark{ position:absolute; right:12px; bottom:8px; color: rgba(0,0,0,0.55); font-weight:700; font-size:12px; }
 
 /* footer */
-.result-card .copyright { margin-top:10px; text-align:right; color:#666; font-size:12px; }
+.card-footer{ margin-top:12px; text-align:right; color:#7b8790; font-size:12px; }
 
-/* responsive */
-@media (max-width: 980px) {
-  .result-body { flex-direction: column; }
-  .animal-emoji-giant { font-size: 66px; }
+/* responsive: single column on small screens */
+@media (max-width: 980px){
+  .card-main{ grid-template-columns: 1fr; }
+  .map-embed{ min-height:300px; }
+  .animal-emoji{ font-size:40px; }
 }
-  
