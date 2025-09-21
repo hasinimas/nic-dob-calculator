@@ -150,6 +150,8 @@ function createAmbientEngine(theme) {
   return { start, stop };
 }
 
+
+
 export default function TravelResult({ answers, nicState = {}, onClose = () => { } }) {
   if (!answers) return null;
 
@@ -167,6 +169,7 @@ export default function TravelResult({ answers, nicState = {}, onClose = () => {
   const [playingAmbient, setPlayingAmbient] = useState(false);
   const ambientRef = useRef(null);
   const cardRef = useRef(null);
+  const planRef = useRef(null);
 
   // cost math
   const perDay = PER_DAY_BASE[personaKey] ?? 120;
@@ -232,60 +235,86 @@ export default function TravelResult({ answers, nicState = {}, onClose = () => {
     }, { timeout: 15000 });
   };
 
-  // download PNG with watermark
- const handleDownload = async () => {
-  if (!cardRef.current) return;
-  // create wrapper that preserves gradient + size
-  const exportWrapper = document.createElement("div");
-  const w = cardRef.current.offsetWidth || 1000;
-  exportWrapper.style.width = w + "px";
-  exportWrapper.style.display = "inline-block";
-  exportWrapper.style.position = "relative";
-  exportWrapper.style.padding = "18px";
-  exportWrapper.style.borderRadius = "16px";
-  // nice gradient background for export
-  exportWrapper.style.background = "linear-gradient(135deg,#ffecd2,#fcb69f)";
-  exportWrapper.style.boxShadow = "0 20px 60px rgba(4,20,40,0.25)";
-  exportWrapper.style.fontFamily = getComputedStyle(cardRef.current).fontFamily || "Poppins, system-ui";
+  const handleDownload = async () => {
+    if (!planRef.current) return;
 
-  // clone card and append
-  const clone = cardRef.current.cloneNode(true);
+    // Create export wrapper
+    const exportWrapper = document.createElement("div");
+    exportWrapper.style.width = "700px";
+    exportWrapper.style.padding = "32px";
+    exportWrapper.style.borderRadius = "24px";
+    exportWrapper.style.background = "linear-gradient(135deg,#ffecd2,#fcb69f)";
+    exportWrapper.style.fontFamily = "Poppins, sans-serif";
+    exportWrapper.style.color = "#222";
+    exportWrapper.style.boxShadow = "0 12px 32px rgba(0,0,0,0.25)";
 
-  // remove overlay/backdrop elements in the clone that might conflict
-  // (if you added dynamic elements like .result-overlay, remove them)
-  // keep only the inner content card
-  clone.style.margin = "0";
-  clone.style.boxShadow = "none"; // let wrapper provide shadow
-  exportWrapper.appendChild(clone);
+    // Persona Header
+    const header = document.createElement("div");
+    header.style.fontSize = "28px";
+    header.style.fontWeight = "700";
+    header.style.marginBottom = "6px";
+    header.innerText = `${base.animal} ${base.name}`;
+    exportWrapper.appendChild(header);
 
-  // watermark
-  const watermark = document.createElement("div");
-  watermark.innerText = "© hasini de silva";
-  watermark.style.position = "absolute";
-  watermark.style.right = "12px";
-  watermark.style.bottom = "10px";
-  watermark.style.fontSize = "12px";
-  watermark.style.color = "rgba(0,0,0,0.55)";
-  watermark.style.fontWeight = "700";
-  exportWrapper.appendChild(watermark);
+    // Spacer
+    exportWrapper.appendChild(document.createElement("hr"));
 
-  document.body.appendChild(exportWrapper);
-  try {
-    const dataUrl = await htmlToImage.toPng(exportWrapper, { cacheBust: true });
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = `${base.name.replace(/\s+/g, "_")}_travel_card.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch (err) {
-    console.error("export fail", err);
-    alert("Export failed in this browser. Try another browser or update your browser.");
-  } finally {
-    exportWrapper.remove();
-  }
-};
+    // Trip Summary
+    const summary = document.createElement("div");
+    summary.style.fontSize = "20px";
+    summary.style.margin = "12px 0";
+    summary.innerHTML = `
+    <div><b>Estimated total</b>: $${total}</div>
+    <div>Per person: $${Math.round(total / numPeople)}</div>
+    <div>${numPeople} traveler(s) · ${days} day(s)</div>
+  `;
+    exportWrapper.appendChild(summary);
 
+    // Cost breakdown
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginTop = "20px";
+    table.innerHTML = `
+    <tr><td>Base/day × days × people</td><td><b>$${perDay} × ${days} × ${numPeople} = $${perDay * days * numPeople}</b></td></tr>
+    <tr><td>Companion multiplier</td><td>x ${companionMult.toFixed(2)}</td></tr>
+    <tr><td>Group discount</td><td>x ${groupFactor.toFixed(2)}</td></tr>
+    <tr><td>Age discount</td><td>x ${ageFactor.toFixed(2)}</td></tr>
+    <tr><td>Service & taxes (8%)</td><td>$${serviceFee}</td></tr>
+  `;
+    [...table.querySelectorAll("td")].forEach(td => {
+      td.style.padding = "6px 8px";
+      td.style.fontSize = "15px";
+      td.style.borderBottom = "1px solid rgba(0,0,0,0.08)";
+    });
+    exportWrapper.appendChild(table);
+
+    // Watermark
+    const watermark = document.createElement("div");
+    watermark.innerText = "© hasini de silva";
+    watermark.style.marginTop = "24px";
+    watermark.style.fontSize = "12px";
+    watermark.style.color = "rgba(0,0,0,0.5)";
+    watermark.style.textAlign = "right";
+    exportWrapper.appendChild(watermark);
+
+    // Render to PNG
+    document.body.appendChild(exportWrapper);
+    try {
+      const dataUrl = await htmlToImage.toPng(exportWrapper, { cacheBust: true });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `${base.name.replace(/\s+/g, "_")}_travel_card.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("Export failed", err);
+      alert("Export failed in this browser. Try another browser or update.");
+    } finally {
+      exportWrapper.remove();
+    }
+  };
 
   // open google maps search for category near given coords (if available)
   const openGoogleMapsSearch = (categoryLabel) => {
@@ -363,53 +392,59 @@ export default function TravelResult({ answers, nicState = {}, onClose = () => {
 
         <main className="card-main">
           <section className="left-col">
-            <div className="panel glass">
-              <h3>Plan & Cost</h3>
 
-              <div className="inputs-row">
-                <label>Travelers
-                  <input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Math.max(1, Number(e.target.value) || 1))} />
-                </label>
-                <label>Days
-                  <input type="number" min="1" value={days} onChange={(e) => setDays(Math.max(1, Number(e.target.value) || 1))} />
-                </label>
-                <label>Companion
-                  <select value={companion} onChange={(e) => setCompanion(e.target.value)}>
-                    <option>🧳 Solo</option>
-                    <option>💑 Partner</option>
-                    <option>👯 Friends</option>
-                    <option>👨‍👩‍👧 Family</option>
-                  </select>
-                </label>
+            {/* Export wrapper – attach ref here only */}
+            <div className="export-card" ref={planRef}>
+              <div className="persona-header">
+                <span className="persona-icon">{base.animal}</span>
+                <span className="persona-name">{base.name}</span>
               </div>
 
-              <div className="cost-break">
-                <div className="row"><div>Base/day × days × people</div><div>${perDay} × {days} × {numPeople} = <b>${Math.round(perDay * days * numPeople)}</b></div></div>
-                <div className="row"><div>Companion multiplier</div><div>x {companionMult.toFixed(2)}</div></div>
-                <div className="row"><div>Group discount</div><div>x {groupFactor.toFixed(2)}</div></div>
-                <div className="row"><div>Age discount</div><div>x {ageFactor.toFixed(2)}</div></div>
-                <div className="row"><div>Service & taxes (8%)</div><div>${serviceFee}</div></div>
+              <div className="panel glass" ref={planRef}>
+                <h3>Plan & Cost</h3>
 
-                <div className="row final"><div><strong>Total</strong></div><div className="big">${total}</div></div>
-                <div className="row small-note"><div>Per person</div><div>${Math.round(total / numPeople)}</div></div>
-              </div>
+                <div className="inputs-row">
+                  <label>Travelers
+                    <input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Math.max(1, Number(e.target.value) || 1))} />
+                  </label>
+                  <label>Days
+                    <input type="number" min="1" value={days} onChange={(e) => setDays(Math.max(1, Number(e.target.value) || 1))} />
+                  </label>
+                  <label>Companion
+                    <select value={companion} onChange={(e) => setCompanion(e.target.value)}>
+                      <option>🧳 Solo</option>
+                      <option>💑 Partner</option>
+                      <option>👯 Friends</option>
+                      <option>👨‍👩‍👧 Family</option>
+                    </select>
+                  </label>
+                </div>
 
-              <div className="actions-row">
-                <button className="btn primary" onClick={handleFindPlacesNearby}>
-                  {loadingPlaces ? "Finding…" : "Find Places Nearby"}
-                </button>
+                <div className="cost-break">
+                  <div className="row"><div>Base/day × days × people</div><div>${perDay} × {days} × {numPeople} = <b>${Math.round(perDay * days * numPeople)}</b></div></div>
+                  <div className="row"><div>Companion multiplier</div><div>x {companionMult.toFixed(2)}</div></div>
+                  <div className="row"><div>Group discount</div><div>x {groupFactor.toFixed(2)}</div></div>
+                  <div className="row"><div>Age discount</div><div>x {ageFactor.toFixed(2)}</div></div>
+                  <div className="row"><div>Service & taxes (8%)</div><div>${serviceFee}</div></div>
 
-                <button className="btn ghost" onClick={() => openGoogleMapsSearch(personaCategoryQuery())}>
-                  Open in Google Maps
-                </button>
+                  <div className="row final"><div><strong>Total</strong></div><div className="big">${total}</div></div>
+                  <div className="row small-note"><div>Per person</div><div>${Math.round(total / numPeople)}</div></div>
+                </div>
 
-                <button className="btn alt" onClick={handleToggleAmbient}>
-                  {playingAmbient ? "🔇 Stop Feel Travel" : "🔊 Feel Travel"}
-                </button>
-
-                <button className="btn download" onClick={handleDownload}>
-                  Download Card (PNG)
-                </button>
+                <div className="actions-row">
+                  <button className="btn primary" onClick={handleFindPlacesNearby}>
+                    {loadingPlaces ? "Finding…" : "Find Places Nearby"}
+                  </button>
+                  <button className="btn ghost" onClick={() => openGoogleMapsSearch(personaCategoryQuery())}>
+                    Open in Google Maps
+                  </button>
+                  <button className="btn alt" onClick={handleToggleAmbient}>
+                    {playingAmbient ? "🔇 Stop Feel Travel" : "🔊 Feel Travel"}
+                  </button>
+                  <button className="btn download" onClick={handleDownload}>
+                    Download Card (PNG)
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -432,13 +467,18 @@ export default function TravelResult({ answers, nicState = {}, onClose = () => {
               />
               <button
                 className="btn copy"
-                onClick={() => {
+                onClick={(e) => {
                   navigator.clipboard.writeText(
                     `🌍 My travel persona: ${base.name} ${base.animal}
-                     💰 Estimated trip: $${total} for ${numPeople} people · ${days} days.
-                     ✨ Style: ${personaCategoryQuery()}
-                     #TravelQuiz #NICDemo`
-                  ).then(() => alert("Copied to clipboard ✅"));
+       💰 Estimated trip: $${total} for ${numPeople} people · ${days} days.
+       ✨ Style: ${personaCategoryQuery()}
+       #TravelQuiz #NICDemo`
+                  ).then(() => {
+                    e.target.innerHTML = "✅ Copied";   // change to copied
+                    setTimeout(() => {
+                      e.target.innerHTML = "📋 Copy";   // reset after 2s
+                    }, 2000);
+                  });
                 }}
               >
                 📋 Copy
