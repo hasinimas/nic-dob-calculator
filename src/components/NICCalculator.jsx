@@ -1,21 +1,31 @@
 // src/components/NICCalculator.jsx
-import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useRef, useState } from "react";
 import { buildInsights, chineseZodiac } from "../utils/insights";
+import TravelButton from "./TravelButton";
 import "./NICCalculator.css";
 
+/**
+ * Parse NIC to birthday info.
+ * Returns null on invalid input, or:
+ * { birthday: "YYYY-MM-DD", year, gender, age, type, birthdayDate: Date }
+ */
 function getBirthdayFromNIC(nic) {
   let year, dayCode;
-  if (!nic) return "❌ Invalid NIC format";
-  if (nic.length === 12) {
+  if (!nic) return null;
+
+  // Trim spaces
+  nic = nic.trim();
+
+  if (nic.length === 12 && /^\d{12}$/.test(nic)) {
     year = parseInt(nic.substring(0, 4), 10);
     dayCode = parseInt(nic.substring(4, 7), 10);
-  } else if (nic.length === 10) {
+  } else if (nic.length === 10 && /^\d{9}[VvXx]?$/.test(nic)) {
     year = 1900 + parseInt(nic.substring(0, 2), 10);
+    // handle century roll (if your app expects > 1999 NICs adjust as needed)
     if (year < 1920) year += 100;
     dayCode = parseInt(nic.substring(2, 5), 10);
   } else {
-    return "❌ Invalid NIC format";
+    return null;
   }
 
   let gender = "Male";
@@ -24,295 +34,241 @@ function getBirthdayFromNIC(nic) {
     dayCode -= 500;
   }
 
-  const birthdayDate = new Date(year, 0, dayCode);
-  birthdayDate.setDate(birthdayDate.getDate() - 1);
-  const month = birthdayDate.getMonth() + 1;
-  const day = birthdayDate.getDate();
-  const birthday = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-  return { birthday, gender };
-}
+  // dayCode is the day-of-year: construct date from Jan 1 + (dayCode - 1)
+  const birthdayDate = new Date(year, 0, 1);
+  birthdayDate.setDate(birthdayDate.getDate() + dayCode - 1);
 
-function getDayOfWeek(dateStr) {
-  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  return days[new Date(dateStr).getDay()];
-}
+  if (isNaN(birthdayDate.getTime())) return null;
 
-function calculateAge(dateStr) {
-  const today = new Date();
-  const d = new Date(dateStr);
-  let age = today.getFullYear() - d.getFullYear();
-  const m = today.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
-  return age;
-}
+  const birthday = birthdayDate.toISOString().split("T")[0];
+  const age = new Date().getFullYear() - year;
 
-function isBirthdayToday(dateStr) {
-  const t = new Date();
-  const d = new Date(dateStr);
-  return t.getDate() === d.getDate() && t.getMonth() === d.getMonth();
+  return {
+    birthday,
+    year,
+    gender,
+    age,
+    type: birthdayDate.toDateString(),
+    birthdayDate,
+  };
 }
 
 export default function NICCalculator() {
-  const navigate = useNavigate();
   const [nic, setNic] = useState("");
-  const [result, setResult] = useState(null); // { birthday, gender, dayName, age, birthdayToday } or { error }
-  const [submitted, setSubmitted] = useState(false);
-  const [insights, setInsights] = useState(null);
-  const [loadingInsights, setLoadingInsights] = useState(false);
-  const [insightsError, setInsightsError] = useState(null);
+  const [details, setDetails] = useState(null); // parsed birthday details
+  const [insights, setInsights] = useState(null); // payload from buildInsights()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const audioRef = useRef(null);
 
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
-
-  useEffect(() => {
-    document.body.classList.add("default");
-    const char = document.getElementById("floatingCharacter");
-    if (char) char.style.backgroundImage = "url('/assets/couple.jpg')";
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  const launchConfetti = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const confetti = Array.from({ length: 200 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height - canvas.height,
-      r: Math.random() * 6 + 2,
-      d: Math.random() * 200,
-      color: `hsl(${Math.random() * 360}, 90%, 60%)`,
-    }));
-
-    let angle = 0;
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      confetti.forEach(c => {
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-        ctx.fillStyle = c.color;
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.6)";
-        ctx.stroke();
-        c.y += Math.cos(angle + c.d) + 1 + c.r / 2;
-        c.x += Math.sin(angle);
-        if (c.y > canvas.height) {
-          c.y = -10;
-          c.x = Math.random() * canvas.width;
-        }
-      });
-      angle += 0.01;
-      rafRef.current = requestAnimationFrame(draw);
-    }
-    draw();
-    setTimeout(() => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }, 4000);
-  };
-
-  const applyGenderStyle = (gender) => {
-    const body = document.body;
-    const char = document.getElementById("floatingCharacter");
-    body.classList.remove("default","male","female");
-    if (gender === "Female") {
-      body.classList.add("female");
-      if (char) char.style.backgroundImage = "url('/assets/girl.jpg')";
-    } else {
-      body.classList.add("male");
-      if (char) char.style.backgroundImage = "url('/assets/boy.jpg')";
-    }
-  };
-
-  const speakAll = (birthday, age, gender) => {
-    try {
-      const utter = new SpeechSynthesisUtterance(
-        `Your birthday is ${new Date(birthday).toDateString()}. You are ${age} years old. Gender: ${gender}.`
-      );
-      utter.lang = "en-US";
-      utter.rate = 1;
-      utter.pitch = 1;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
-    } catch (e) {
-      console.warn("speech failed", e);
-    }
-  };
-
-  const onCalculate = async () => {
-    // Reset previous results and insights
-    setSubmitted(false);
-    setResult(null);
-    setInsights(null);
-    setInsightsError(null);
-    setLoadingInsights(false);
-
-    const parsed = getBirthdayFromNIC(nic.trim());
-    if (typeof parsed === "string") {
-      setResult({ error: parsed });
-      setSubmitted(true);
+  // Called when user clicks the "Check" button
+  const handleCalculate = async () => {
+    const info = getBirthdayFromNIC(nic);
+    if (!info) {
+      setDetails(null);
+      setInsights(null);
+      setError("❌ Oops! Please enter a valid NIC number.");
       return;
     }
 
-    const dayName = getDayOfWeek(parsed.birthday);
-    const age = calculateAge(parsed.birthday);
-    const birthdayToday = isBirthdayToday(parsed.birthday);
+    // Clear errors, set parsed details
+    setError("");
+    setDetails(info);
+    setInsights(null); // reset previous insights
+    setLoading(true);
 
-    const res = { ...parsed, dayName, age, birthdayToday };
-    setResult(res);
-    setSubmitted(true);
-
-    launchConfetti();
-    applyGenderStyle(res.gender);
-    speakAll(res.birthday, res.age, res.gender);
-
-    // Load insights asynchronously
-    setLoadingInsights(true);
+    // Try to play sound immediately (best chance to be considered a user gesture).
     try {
-      const dob = new Date(res.birthday);
-      const payload = await buildInsights(dob);
-      setInsights(payload);
-    } catch (e) {
-      console.error("insights failed", e);
-      setInsightsError("Failed to load fun facts.");
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        // do NOT await here — attempt play and continue fetching insights
+        audioRef.current.play().catch((err) => {
+          // Play can be blocked; that's okay — don't stop the flow
+          console.debug("Audio playback prevented or failed:", err?.message || err);
+        });
+      }
+    } catch (err) {
+      console.debug("Audio issue", err);
+    }
+
+    // Fetch insights (buildInsights is async and returns { zodiac, people, event, movies })
+    try {
+      const payload = await buildInsights(info.birthdayDate);
+      // payload should be an object like { zodiac, people, event, movies }
+      // guard against unexpected returns
+      const safePayload = {
+        zodiac: payload?.zodiac ?? chineseZodiac(info.year),
+        people: Array.isArray(payload?.people) ? payload.people : [],
+        event: payload?.event ?? null,
+        movies: Array.isArray(payload?.movies) ? payload.movies : [],
+      };
+      setInsights(safePayload);
+    } catch (err) {
+      console.error("Failed to load insights:", err);
+      // set a minimal fallback so cards show friendly content
+      setInsights({
+        zodiac: chineseZodiac(info.year),
+        people: [],
+        event: null,
+        movies: [],
+      });
     } finally {
-      setLoadingInsights(false);
+      setLoading(false);
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      onCalculate();
-    }
-  };
-
-  const handleGoTravel = () => {
-    let persona = "Adventure Romantic";
-    if (result?.age > 30) persona = "Culture Seeker";
-    if (result?.age < 18) persona = "Young Explorer";
-    navigate("/travel", {
-      state: {
-        birthday: result?.birthday,
-        age: result?.age,
-        gender: result?.gender,
-        persona,
-      },
-    });
-  };
-
-  const zodiac = result?.birthday ? chineseZodiac(new Date(result.birthday).getFullYear()) : null;
+  // Utility to get zodiac image filename (lowercase, no spaces).
+  // Expectation: put images in public/zodiac/rat.png, ox.png, tiger.png, ...
+  const zodiacAnimal = details ? chineseZodiac(details.year) : null;
+  const zodiacImg = zodiacAnimal ? `/zodiac/${String(zodiacAnimal).toLowerCase()}.png` : null;
 
   return (
-    <section className="card nic-card">
+    <div className="nic-card">
+      <h1 className="title">NIC Birthday Insights 🎉</h1>
+
+      {/* Input row */}
       <div className="input-row">
         <input
           type="text"
-          placeholder="Enter NIC Number"
+          inputMode="numeric"
+          placeholder="Enter NIC number..."
           value={nic}
           onChange={(e) => setNic(e.target.value)}
-          onKeyDown={handleKeyDown}
-          aria-label="NIC number"
         />
-        <button onClick={onCalculate}>Reveal Birthday</button>
+        <button onClick={handleCalculate} className="btn-primary">
+          Check
+        </button>
       </div>
 
-      {/* Show Birthday / Gender / Age */}
-      {submitted && result && (
-        <div className={`result ${result.error ? "" : "visible"}`} aria-live="polite">
-          {result.error ? (
-            <div className="error">{result.error}</div>
-          ) : (
-            <div className="grid">
-              <div>
-                🎉 Birthday: <b>{result.birthday}</b> <span className="badge">{result.dayName}</span>
-              </div>
-              <div>🎂 Age: <b>{result.age}</b></div>
-              <div>👤 Gender: <b>{result.gender}</b></div>
-              {result.birthdayToday && <div className="happy">🎈 Happy Birthday! 🎈</div>}
-            </div>
-          )}
+      {/* Cute inline error */}
+      {error && <div className="error-box">{error}</div>}
+
+      {/* Audio element (place file at public/sounds/success.mp3) */}
+      <audio ref={audioRef} preload="auto">
+        <source src="/sounds/success.mp3" type="audio/mpeg" />
+      </audio>
+
+      {/* Birthday details (show if parsed) */}
+      {details && (
+        <div className="birthday-details">
+          <p>
+            <strong>Birthday:</strong> {details.birthday}
+          </p>
+          <p>
+            <strong>Age:</strong> {details.age}
+          </p>
+          <p>
+            <strong>Gender:</strong> {details.gender}
+          </p>
+          <p>
+            <strong>Birthday Type:</strong> {details.type}
+          </p>
         </div>
       )}
 
-      <canvas id="confettiCanvas" ref={canvasRef} />
-
-      {/* Insights */}
-      {submitted && (
-        <section id="insights-container">
-          <h2>Fun Facts & Insights 🎉</h2>
-
-          {!loadingInsights && !insights && !insightsError && (
-            <p className="muted">Run "Reveal Birthday" to load fun facts & extras</p>
-          )}
-
-          {loadingInsights && <p className="muted">Loading insights…</p>}
-          {insightsError && <p className="error">{insightsError}</p>}
-
-          {insights && (
-            <>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button className="travel-btn" onClick={handleGoTravel}>View Travel Card</button>
+      {/* Cards grid */}
+      {/* Show placeholder while loading; show cards when insights is an object (could be empty arrays) */}
+      {details && (
+        <div className="cards-grid">
+          {/* Chinese Zodiac */}
+          <div className="info-card zodiac-card">
+            <h2>🐲 Chinese Zodiac</h2>
+            {zodiacImg ? (
+              <div className="zodiac-content">
+                <img
+                  src={zodiacImg}
+                  alt={zodiacAnimal}
+                  className="zodiac-img"
+                  onError={(e) => {
+                    // graceful fallback: hide broken img
+                    e.target.style.display = "none";
+                  }}
+                />
+                <h3>{zodiacAnimal}</h3>
               </div>
+            ) : (
+              <p className="empty">No zodiac info available.</p>
+            )}
+          </div>
 
-              <div className="cards">
-                <div className="insight-card">
-                  <h3>Chinese Zodiac</h3>
-                  <p>{zodiac}</p>
-                </div>
+          {/* Share Birthday (people born same day) */}
+          <div className="info-card">
+            <h2>🎂 Share Birthday</h2>
 
-                <div className="insight-card">
-                  <h3>Shared Birthdays</h3>
-                  {insights.people && insights.people.length ? (
-                    insights.people.map((p, i) => (
-                      <div key={i} className="line">
-                        <a href={p.url} target="_blank" rel="noreferrer">{p.name}</a>
-                        {p.bio ? ` — ${p.bio}` : ""}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="empty">😔 No shared birthdays found.</p>
-                  )}
-                </div>
-
-                <div className="insight-card">
-                  <h3>On This Day</h3>
-                  {insights.event ? (
-                    <>
-                      <p><strong>{insights.event.year}</strong> — {insights.event.text}</p>
-                      {insights.event.pages?.map((pg, idx) => (
-                        <div key={idx}><a href={pg.url} target="_blank" rel="noreferrer">{pg.title}</a></div>
-                      ))}
-                    </>
-                  ) : (
-                    <p className="empty">No historical event found.</p>
-                  )}
-                </div>
-
-                <div className="insight-card">
-                  <h3>Movies from your birth year</h3>
-                  <div className="posters">
-                    {insights.movies && insights.movies.length ? (
-                      insights.movies.filter(m => m.poster).map((m, i) => (
-                        <figure key={i}>
-                          <img alt={m.title} src={m.poster} />
-                          <figcaption>{m.title}</figcaption>
-                        </figure>
-                      ))
+            {loading && <p className="muted">Loading famous birthdays…</p>}
+            {!loading && insights && insights.people && insights.people.length > 0 && (
+              <div className="list">
+                {insights.people.slice(0, 6).map((p, idx) => (
+                  <div key={idx} className="line">
+                    {p.url ? (
+                      <a href={p.url} target="_blank" rel="noreferrer">
+                        {p.name}
+                      </a>
                     ) : (
-                      <p className="empty">No movies available.</p>
+                      <span>{p.name}</span>
                     )}
+                    {p.bio ? <span className="small"> — {p.bio}</span> : null}
                   </div>
-                </div>
+                ))}
               </div>
-            </>
-          )}
-        </section>
+            )}
+            {!loading && insights && insights.people && insights.people.length === 0 && (
+              <p className="empty">No famous birthdays found for this date.</p>
+            )}
+          </div>
+
+          {/* On This Day (historical event) */}
+          <div className="info-card">
+            <h2>📅 On This Day</h2>
+
+            {loading && <p className="muted">Loading historical events…</p>}
+            {!loading && insights && insights.event && (
+              <div>
+                <p>
+                  <strong>{insights.event.year}</strong> — {insights.event.text}
+                </p>
+                {insights.event.pages && insights.event.pages.length > 0 && (
+                  <p className="small">
+                    <a href={insights.event.pages[0].url} target="_blank" rel="noreferrer">
+                      Read more
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
+            {!loading && insights && !insights.event && (
+              <p className="empty">No historical events found for this day.</p>
+            )}
+          </div>
+
+          {/* More from your birth year (movies) */}
+          <div className="info-card">
+            <h2>✨ More from Your Birth Year</h2>
+
+            {loading && <p className="muted">Loading movies…</p>}
+            {!loading && insights && insights.movies && insights.movies.length > 0 && (
+              <div className="movies">
+                {insights.movies.slice(0, 6).map((m, i) => (
+                  <div key={i} className="movie-item">
+                    {m.poster ? <img src={m.poster} alt={m.title} className="movie-poster" /> : null}
+                    <div className="movie-title">{m.title}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!loading && insights && insights.movies && insights.movies.length === 0 && (
+              <p className="empty">No notable movies found for this year.</p>
+            )}
+          </div>
+        </div>
       )}
-    </section>
+
+      {/* TravelButton — only show after insights load (so it doesn't pop immediately) */}
+      {insights && !loading && (
+        <div style={{ marginTop: 18 }}>
+          <TravelButton />
+        </div>
+      )}
+    </div>
   );
 }
